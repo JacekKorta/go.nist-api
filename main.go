@@ -1,13 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"bytes"
 	"html/template"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
+	"math"
 
 	"github.com/joho/godotenv"
 	"go-nist-api/cpe"
@@ -16,7 +17,19 @@ import (
 var tmpl = template.Must(template.ParseFiles("index.html"))
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	tmpl.Execute(w, nil)
+	buf := &bytes.Buffer{}
+	err := tmpl.Execute(buf, nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	buf.WriteTo(w)
+}
+
+type Search struct {
+	Keyword string
+	TotalPages int
+	Results *cpe.CpeResponse
 }
 
 func searchHandler(cpeApi *cpe.Client) http.HandlerFunc {
@@ -36,7 +49,19 @@ func searchHandler(cpeApi *cpe.Client) http.HandlerFunc {
 			return
 		}
 
-		fmt.Printf("%+v", response)
+		search := &Search{
+			Keyword: keyword,
+			TotalPages: int(math.Ceil(float64(response.TotalResults)/ float64(response.ResultsPerPage))),
+			Results: response,
+		}
+
+		buf := &bytes.Buffer{}
+		err = tmpl.Execute(buf, search)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}	
+		buf.WriteTo(w)
 	}
 }
 
@@ -59,10 +84,8 @@ func main() {
 	myClient := &http.Client{Timeout: 10 * time.Second}
 	cpeApi := cpe.NewClient(myClient, apiKey)
 
-	fs := http.FileServer(http.Dir("assets"))
 
 	mux := http.NewServeMux()
-	mux.Handle("/assets/", http.StripPrefix("/assets/", fs))
 
 	mux.HandleFunc("/search", searchHandler(cpeApi))
 	mux.HandleFunc("/", indexHandler)

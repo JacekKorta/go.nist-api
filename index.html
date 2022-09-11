@@ -2,26 +2,38 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>NIST vulnerabilitty finder</title>
-  <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
 <main>
     <header>
-      <a class="logo" href="/">CVE finder</a>
+      <h2>CVE finder</h2>
       <form action="/search" method="GET">
         <input
           autofocus
           class="search-input"
-          value=""
+          value="{{ .Keyword }}"
           placeholder="Enter a library name"
           type="search"
           name="q"
         />
       </form>
-      <a href="" class="button github-button">Go somwere</a
-      >
+</heder>
+<br>
+    <ul class="search-results">
+      {{ range.Results.Result.Cpes }}
+      <li class="cve">
+        <div>
+          <h3 class="title">{{ .GetTitle }}</h3>
+          <p class="description">{{ .Cpe23URI }}</p>
+          <p class="description">{{ .Vulnerabilities }}</p>
+          <div class="metadata">
+            <time class="published-date">{{ .LastModifiedDate }}</time>
+          </div>
+        </div>
+      </li>
+      {{ end }}
+    </ul>
+</main>
 </body>
 </html>

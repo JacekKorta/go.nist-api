@@ -66,6 +66,9 @@ type Title struct {
 	Lang  string `json:"lang"`
 }
 
+func (c *Cpe) GetTitle() string {
+	return c.Titles[0].Title
+}
 // ===========================
 
 func NewClient(httpClient *http.Client, apiKey string) *Client {
